@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model StepSession {
+  id        Int      @id @default(autoincrement())
+  date      String   // stored as YYYY-MM-DD
+  steps     Int      @default(0)
+  distance  Float    @default(0) // in meters
+  calories  Float    @default(0)
+  goal      Int      @default(10000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
