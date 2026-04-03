@@ -1,33 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getTodayDate, stepsToDistance, stepsToCalories } from "@/lib/utils";
+import { getTodayDate } from "@/lib/utils";
+
+function calcDistance(steps: number, stride: number) {
+    return parseFloat((steps * stride).toFixed(2));
+}
+function calcCalories(steps: number, weight: number) {
+    return parseFloat((steps * 0.0005 * weight * 9.81 * 0.78).toFixed(1));
+}
 
 export async function GET() {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const today = getTodayDate();
-    const session = await prisma.stepSession.findFirst({ where: { date: today } });
-    return NextResponse.json(session ?? { steps: 0, distance: 0, calories: 0, goal: 10000 });
+    const data = await prisma.stepSession.findUnique({
+        where: { userId_date: { userId: session.user.id, date: today } },
+    });
+    return NextResponse.json(data ?? { steps: 0, distance: 0, calories: 0, goal: 10000 });
 }
 
 export async function POST(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { steps, goal } = await req.json();
     const today = getTodayDate();
-    const distance = stepsToDistance(steps);
-    const calories = stepsToCalories(steps);
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    const distance = calcDistance(steps, user?.strideLength ?? 0.78);
+    const calories = calcCalories(steps, user?.weight ?? 70);
 
-    // find existing session for today
-    const existing = await prisma.stepSession.findFirst({ where: { date: today } });
-
-    let session;
-    if (existing) {
-        session = await prisma.stepSession.update({
-            where: { id: existing.id },
-            data: { steps, distance, calories, goal },
-        });
-    } else {
-        session = await prisma.stepSession.create({
-            data: { date: today, steps, distance, calories, goal },
-        });
-    }
-
-    return NextResponse.json(session);
+    const record = await prisma.stepSession.upsert({
+        where: { userId_date: { userId: session.user.id, date: today } },
+        update: { steps, distance, calories, goal: goal ?? user?.dailyGoal ?? 10000 },
+        create: { userId: session.user.id, date: today, steps, distance, calories, goal: goal ?? user?.dailyGoal ?? 10000 },
+    });
+    return NextResponse.json(record);
 }

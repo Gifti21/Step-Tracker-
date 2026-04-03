@@ -2,13 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Footprints, Play, Square, RotateCcw, Zap, MapPin, Flame } from "lucide-react";
-import { stepsToDistance, stepsToCalories } from "@/lib/utils";
 
-const GOAL = 10000;
 const STEP_THRESHOLD = 12;
 const STEP_COOLDOWN = 300;
 
-// SVG ring progress component
 function RingProgress({ value, size = 220, stroke = 14 }: { value: number; size?: number; stroke?: number }) {
     const r = (size - stroke) / 2;
     const circ = 2 * Math.PI * r;
@@ -17,9 +14,7 @@ function RingProgress({ value, size = 220, stroke = 14 }: { value: number; size?
 
     return (
         <svg width={size} height={size} className="ring-progress absolute">
-            {/* Track */}
             <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
-            {/* Progress */}
             <circle
                 cx={size / 2} cy={size / 2} r={r} fill="none"
                 stroke={isComplete ? "url(#greenGrad)" : "url(#purpleGrad)"}
@@ -46,6 +41,9 @@ function RingProgress({ value, size = 220, stroke = 14 }: { value: number; size?
 
 export default function StepCounter() {
     const [steps, setSteps] = useState(0);
+    const [goal, setGoal] = useState(10000);
+    const [strideLength, setStrideLength] = useState(0.78);
+    const [weight, setWeight] = useState(70);
     const [isTracking, setIsTracking] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [bouncing, setBouncing] = useState(false);
@@ -54,16 +52,24 @@ export default function StepCounter() {
     const lastAccel = useRef({ x: 0, y: 0, z: 0 });
     const saveTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const distance = stepsToDistance(steps);
-    const calories = stepsToCalories(steps);
-    const progress = Math.min((steps / GOAL) * 100, 100);
-    const isGoalReached = steps >= GOAL;
+    const distance = parseFloat((steps * strideLength).toFixed(2));
+    const calories = parseFloat((steps * 0.0005 * weight * 9.81 * strideLength).toFixed(1));
+    const progress = Math.min((steps / goal) * 100, 100);
+    const isGoalReached = steps >= goal;
 
     useEffect(() => {
         setIsMobile(typeof window !== "undefined" && "DeviceMotionEvent" in window);
-        fetch("/api/steps")
-            .then((r) => r.json())
-            .then((data) => setSteps(data.steps ?? 0));
+
+        // load profile + today's steps in parallel
+        Promise.all([
+            fetch("/api/steps").then(r => r.json()),
+            fetch("/api/profile").then(r => r.json()),
+        ]).then(([stepData, profile]) => {
+            setSteps(stepData.steps ?? 0);
+            if (profile.dailyGoal) setGoal(profile.dailyGoal);
+            if (profile.strideLength) setStrideLength(profile.strideLength);
+            if (profile.weight) setWeight(profile.weight);
+        });
     }, []);
 
     const triggerBounce = () => {
@@ -71,13 +77,13 @@ export default function StepCounter() {
         setTimeout(() => setBouncing(false), 150);
     };
 
-    const saveSteps = useCallback((count: number) => {
+    const saveSteps = useCallback((count: number, currentGoal: number) => {
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
             fetch("/api/steps", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ steps: count, goal: GOAL }),
+                body: JSON.stringify({ steps: count, goal: currentGoal }),
             }).then(() => {
                 setJustSaved(true);
                 setTimeout(() => setJustSaved(false), 1500);
@@ -101,12 +107,12 @@ export default function StepCounter() {
             lastStepTime.current = now;
             setSteps((prev) => {
                 const next = prev + 1;
-                saveSteps(next);
+                saveSteps(next, goal);
                 return next;
             });
             triggerBounce();
         }
-    }, [saveSteps]);
+    }, [saveSteps, goal]);
 
     const startTracking = async () => {
         if (isMobile) {
@@ -131,7 +137,7 @@ export default function StepCounter() {
         fetch("/api/steps", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ steps: 0, goal: GOAL }),
+            body: JSON.stringify({ steps: 0, goal }),
         });
     };
 
@@ -139,7 +145,7 @@ export default function StepCounter() {
         if (!isTracking) return;
         setSteps((prev) => {
             const next = prev + 1;
-            saveSteps(next);
+            saveSteps(next, goal);
             return next;
         });
         triggerBounce();
@@ -160,18 +166,16 @@ export default function StepCounter() {
                         {steps.toLocaleString()}
                     </span>
                     <span className="text-xs text-white/40 mt-1 uppercase tracking-widest">steps</span>
-                    <span className="text-xs text-white/30 mt-0.5">{Math.round(progress)}% of goal</span>
+                    <span className="text-xs text-white/30 mt-0.5">{Math.round(progress)}% of {goal.toLocaleString()}</span>
                 </div>
             </div>
 
-            {/* Goal reached badge */}
             {isGoalReached && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium">
                     <Zap className="w-4 h-4" /> Goal reached! Amazing work
                 </div>
             )}
 
-            {/* Desktop hint */}
             {!isMobile && isTracking && (
                 <p className="text-xs text-purple-400/70 -mt-2">Tap the ring to count steps</p>
             )}
@@ -200,38 +204,34 @@ export default function StepCounter() {
                     <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
                         <Footprints className="w-4 h-4 text-purple-400" />
                     </div>
-                    <span className="text-base font-bold text-white">{(GOAL - steps).toLocaleString()}</span>
+                    <span className="text-base font-bold text-white">
+                        {Math.max(goal - steps, 0).toLocaleString()}
+                    </span>
                     <span className="text-xs text-white/40">to goal</span>
                 </div>
             </div>
 
             {/* Save indicator */}
-            <div className={`text-xs transition-opacity duration-300 ${justSaved ? "opacity-100 text-emerald-400" : "opacity-0"}`}>
+            <div className={`text-xs transition-opacity duration-300 -mt-2 ${justSaved ? "opacity-100 text-emerald-400" : "opacity-0"}`}>
                 ✓ Saved
             </div>
 
             {/* Controls */}
             <div className="flex gap-3 w-full -mt-2">
                 {!isTracking ? (
-                    <button
-                        onClick={startTracking}
+                    <button onClick={startTracking}
                         className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-white text-sm transition-all active:scale-95"
-                        style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)" }}
-                    >
+                        style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)" }}>
                         <Play className="w-4 h-4" /> Start Tracking
                     </button>
                 ) : (
-                    <button
-                        onClick={stopTracking}
-                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-white text-sm bg-red-500/80 hover:bg-red-500 transition-all active:scale-95"
-                    >
+                    <button onClick={stopTracking}
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-white text-sm bg-red-500/80 hover:bg-red-500 transition-all active:scale-95">
                         <Square className="w-4 h-4" /> Stop
                     </button>
                 )}
-                <button
-                    onClick={reset}
-                    className="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95"
-                >
+                <button onClick={reset}
+                    className="w-12 h-12 rounded-2xl glass-card flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95">
                     <RotateCcw className="w-4 h-4" />
                 </button>
             </div>

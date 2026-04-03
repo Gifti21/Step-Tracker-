@@ -6,13 +6,49 @@ datasource db {
   provider = "sqlite"
 }
 
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String        @unique
+  password      String?
+  image         String?
+  weight        Float         @default(70)
+  strideLength  Float         @default(0.78)
+  dailyGoal     Int           @default(10000)
+  createdAt     DateTime      @default(now())
+  sessions      StepSession[]
+  accounts      Account[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
 model StepSession {
   id        Int      @id @default(autoincrement())
-  date      String   // stored as YYYY-MM-DD
+  date      String
   steps     Int      @default(0)
-  distance  Float    @default(0) // in meters
+  distance  Float    @default(0)
   calories  Float    @default(0)
   goal      Int      @default(10000)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
 }
