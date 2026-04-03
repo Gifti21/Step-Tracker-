@@ -4,20 +4,20 @@ import { useEffect, useState } from "react";
 import { TrendingUp, CheckCircle } from "lucide-react";
 
 interface Session {
-    id: number; date: string; steps: number;
-    distance: number; calories: number; goal: number;
+  id: number; date: string; steps: number;
+  distance: number; calories: number; goal: number;
 }
 
+const GRAD = "linear-gradient(135deg,#7c3aed,#a855f7,#ec4899)";
+const GRAD_GREEN = "linear-gradient(135deg,#059669,#34d399)";
+
 export default function StepHistory() {
-    const [history, setHistory] = useState<Session[]>([]);
+  const [history, setHistory] = useState<Session[]>([]);
 
-    useEffect(() => {
-        fetch("/api/steps/history")
-            .then(r => r.json())
-            .then(d => Array.isArray(d) ? setHistory(d) : [])
-            .catch(() => { });
-    }, []);
-
+  useEffect(() => {
+    fetch("/api/steps/history")
+      .then(r => r.json())
+      .then(d => Array.isArray(d) ? setHistory(d) :
     if (!history.length) return null;
 
     const max = Math.max(...history.map(s => s.steps), 1);

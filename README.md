@@ -64,7 +64,3 @@ DB_PATH=/data/dev.db
 ```
 
 > SQLite works great for personal/small-team use. For high traffic, swap the adapter for PostgreSQL via `@prisma/adapter-pg`.
-
-## License
-
-MIT
