@@ -3,32 +3,42 @@ import { redirect } from "next/navigation";
 import StepCounter from "@/components/StepCounter";
 import StepHistory from "@/components/StepHistory";
 import Navbar from "@/components/Navbar";
-import { Footprints } from "lucide-react";
+import OfflineBanner from "@/components/OfflineBanner";
 
 export default async function Home() {
   const session = await auth();
   if (!session) redirect("/auth/signin");
 
   return (
-    <main className="min-h-screen bg-mesh p-4 pb-10 flex flex-col items-center gap-6">
-      <div className="w-full max-w-sm pt-8 flex flex-col gap-4">
-        <Navbar />
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
-              <Footprints className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">StepTracker</h1>
+    <>
+      <OfflineBanner />
+      <div className="bg-mesh" style={{ minHeight: "100dvh" }}>
+        <div style={{
+          maxWidth: 480,
+          margin: "0 auto",
+          padding: "0 1rem 3rem",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "1.5rem",
+        }}>
+          <div style={{ width: "100%", paddingTop: "1.25rem" }}>
+            <Navbar />
           </div>
-          <p className="text-sm text-white/40">
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          </p>
+
+          <div className="fade-up" style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-faint)", marginBottom: 4 }}>
+              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+            </p>
+            <h1 className="grad-text" style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em" }}>
+              StepTracker
+            </h1>
+          </div>
+
+          <StepCounter />
+          <StepHistory />
         </div>
       </div>
-
-      <StepCounter />
-      <StepHistory />
-    </main>
+    </>
   );
 }

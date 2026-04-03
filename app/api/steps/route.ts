@@ -6,6 +6,7 @@ import { getTodayDate } from "@/lib/utils";
 function calcDistance(steps: number, stride: number) {
     return parseFloat((steps * stride).toFixed(2));
 }
+
 function calcCalories(steps: number, weight: number) {
     return parseFloat((steps * 0.0005 * weight * 9.81 * 0.78).toFixed(1));
 }
@@ -28,11 +29,12 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     const distance = calcDistance(steps, user?.strideLength ?? 0.78);
     const calories = calcCalories(steps, user?.weight ?? 70);
+    const dailyGoal = goal ?? user?.dailyGoal ?? 10000;
 
     const record = await prisma.stepSession.upsert({
         where: { userId_date: { userId: session.user.id, date: today } },
-        update: { steps, distance, calories, goal: goal ?? user?.dailyGoal ?? 10000 },
-        create: { userId: session.user.id, date: today, steps, distance, calories, goal: goal ?? user?.dailyGoal ?? 10000 },
+        update: { steps, distance, calories, goal: dailyGoal },
+        create: { userId: session.user.id, date: today, steps, distance, calories, goal: dailyGoal },
     });
     return NextResponse.json(record);
 }

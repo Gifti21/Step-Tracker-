@@ -13,90 +13,67 @@ export default function SignUp() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const submit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setError("");
-
-        // 1. Create account
+        setLoading(true); setError("");
         const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, password }),
         });
-
         if (!res.ok) {
-            try {
-                const data = await res.json();
-                setError(data.error ?? "Something went wrong");
-            } catch {
-                setError("Something went wrong. Please try again.");
-            }
-            setLoading(false);
-            return;
+            try { const d = await res.json(); setError(d.error ?? "Something went wrong"); }
+            catch { setError("Something went wrong. Please try again."); }
+            setLoading(false); return;
         }
-
-        // 2. Redirect to sign in — faster than calling signIn() which adds a round trip
         router.push(`/auth/signin?registered=1&email=${encodeURIComponent(email)}`);
     };
 
     return (
-        <div className="min-h-screen bg-mesh flex items-center justify-center p-4">
-            <div className="glass-card rounded-3xl p-8 w-full max-w-sm flex flex-col gap-6">
-                <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
-                        <Footprints className="w-6 h-6 text-white" />
+        <div className="bg-mesh min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+            <div className="glass rounded-3xl p-8 w-full fade-up" style={{ maxWidth: 400 }}>
+                <div className="flex flex-col items-center gap-3 mb-8">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "var(--grad)" }}>
+                        <Footprints className="w-7 h-7 text-white" />
                     </div>
-                    <h1 className="text-xl font-black text-white">Create account</h1>
-                    <p className="text-sm text-white/40">Start tracking your steps today</p>
+                    <div className="text-center">
+                        <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>Create account</h1>
+                        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Start tracking your steps today</p>
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50 uppercase tracking-wider">Name</label>
-                        <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                            <input type="text" value={name} onChange={e => setName(e.target.value)}
-                                placeholder="Your name"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors" />
+                <form onSubmit={submit} className="flex flex-col gap-4">
+                    {[
+                        { label: "Name", type: "text", val: name, set: setName, ph: "Your name", icon: User, ac: "name" },
+                        { label: "Email", type: "email", val: email, set: setEmail, ph: "you@example.com", icon: Mail, ac: "email" },
+                        { label: "Password", type: "password", val: password, set: setPassword, ph: "Min 8 characters", icon: Lock, ac: "new-password" },
+                    ].map(({ label, type, val, set, ph, icon: Icon, ac }) => (
+                        <div key={label} className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>{label}</label>
+                            <div className="relative">
+                                <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-faint)" }} />
+                                <input type={type} value={val} onChange={e => set(e.target.value)}
+                                    placeholder={ph} autoComplete={ac}
+                                    required={label !== "Name"} minLength={label === "Password" ? 8 : undefined}
+                                    className="input" style={{ paddingLeft: "2.5rem" }} />
+                            </div>
                         </div>
-                    </div>
+                    ))}
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50 uppercase tracking-wider">Email</label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                                placeholder="you@example.com" required
-                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors" />
-                        </div>
-                    </div>
+                    {error && (
+                        <p className="text-sm text-center py-2 px-3 rounded-xl" style={{ color: "var(--danger)", background: "rgba(239,68,68,0.1)" }}>
+                            {error}
+                        </p>
+                    )}
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50 uppercase tracking-wider">Password</label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                                placeholder="Min 8 characters" required minLength={8}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-colors" />
-                        </div>
-                    </div>
-
-                    {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-
-                    <button type="submit" disabled={loading}
-                        className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all active:scale-95 disabled:opacity-60"
-                        style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)" }}>
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Account"}
+                    <button type="submit" disabled={loading} className="btn-primary mt-1">
+                        {loading ? <Loader2 className="w-4 h-4 spin" /> : "Create Account"}
                     </button>
                 </form>
 
-                <p className="text-center text-sm text-white/40">
+                <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
                     Already have an account?{" "}
-                    <Link href="/auth/signin" className="text-purple-400 hover:text-purple-300 transition-colors">
-                        Sign in
-                    </Link>
+                    <Link href="/auth/signin" className="font-semibold" style={{ color: "var(--accent)" }}>Sign in</Link>
                 </p>
             </div>
         </div>
