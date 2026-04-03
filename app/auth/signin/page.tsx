@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Footprints, Mail, Lock, Loader2 } from "lucide-react";
+import { Footprints, Mail, Lock, Loader2, CheckCircle } from "lucide-react";
 
 function SignInForm() {
     const router = useRouter();
@@ -17,70 +17,94 @@ function SignInForm() {
 
     useEffect(() => {
         const e = params.get("email");
-        if (e) setEmail(e);
+        if (e) setEmail(decodeURIComponent(e));
         if (params.get("registered")) setRegistered(true);
     }, [params]);
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true); setError("");
+        setLoading(true);
+        setError("");
         const res = await signIn("credentials", { email, password, redirect: false });
         setLoading(false);
-        if (res?.error) setError("Invalid email or password");
+        if (res?.error) setError("Invalid email or password. Please try again.");
         else router.push("/");
     };
 
     return (
-        <div className="bg-mesh min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
-            <div className="glass rounded-3xl p-8 w-full fade-up" style={{ maxWidth: 400 }}>
-                <div className="flex flex-col items-center gap-3 mb-8">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "var(--grad)" }}>
-                        <Footprints className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="text-center">
-                        <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>Welcome back</h1>
-                        {registered
-                            ? <p className="text-sm mt-1" style={{ color: "var(--success)" }}>Account created — sign in below</p>
-                            : <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Sign in to continue</p>}
-                    </div>
+        <div className="page auth-page">
+            <div className="auth-card fade-up">
+
+                {/* Logo */}
+                <div className="auth-logo">
+                    <Footprints style={{ width: 28, height: 28, color: "#fff" }} />
                 </div>
 
-                <form onSubmit={submit} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>Email</label>
-                        <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-faint)" }} />
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                {/* Heading */}
+                <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+                    <h1 style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--text)", marginBottom: 6 }}>
+                        Welcome back
+                    </h1>
+                    {registered ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: "var(--success)", fontSize: "0.875rem", fontWeight: 600 }}>
+                            <CheckCircle style={{ width: 15, height: 15 }} /> Account created — sign in below
+                        </div>
+                    ) : (
+                        <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                            Sign in to continue tracking your steps
+                        </p>
+                    )}
+                </div>
+
+                {/* Form */}
+                <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div className="field">
+                        <label className="label">
+                            <Mail style={{ width: 12, height: 12 }} /> Email address
+                        </label>
+                        <div className="input-wrap">
+                            <Mail className="input-icon" style={{ width: 16, height: 16 }} />
+                            <input
+                                type="email" value={email} onChange={e => setEmail(e.target.value)}
                                 placeholder="you@example.com" required autoComplete="email"
-                                className="input" style={{ paddingLeft: "2.5rem" }} />
+                                className="input has-icon"
+                            />
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>Password</label>
-                        <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-faint)" }} />
-                            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                                placeholder="••••••••" required autoComplete="current-password"
-                                className="input" style={{ paddingLeft: "2.5rem" }} />
+                    <div className="field">
+                        <label className="label">
+                            <Lock style={{ width: 12, height: 12 }} /> Password
+                        </label>
+                        <div className="input-wrap">
+                            <Lock className="input-icon" style={{ width: 16, height: 16 }} />
+                            <input
+                                type="password" value={password} onChange={e => setPassword(e.target.value)}
+                                placeholder="Enter your password" required autoComplete="current-password"
+                                className="input has-icon"
+                            />
                         </div>
                     </div>
 
                     {error && (
-                        <p className="text-sm text-center py-2 px-3 rounded-xl" style={{ color: "var(--danger)", background: "rgba(239,68,68,0.1)" }}>
+                        <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "var(--r)", padding: "0.75rem 1rem", color: "var(--danger)", fontSize: "0.85rem", textAlign: "center" }}>
                             {error}
-                        </p>
+                        </div>
                     )}
 
-                    <button type="submit" disabled={loading} className="btn-primary mt-1">
-                        {loading ? <Loader2 className="w-4 h-4 spin" /> : "Sign In"}
+                    <button type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: 4 }}>
+                        {loading ? <Loader2 style={{ width: 18, height: 18 }} className="spin" /> : "Sign In"}
                     </button>
                 </form>
 
-                <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
-                    No account?{" "}
-                    <Link href="/auth/signup" className="font-semibold" style={{ color: "var(--accent)" }}>Sign up</Link>
+                {/* Footer */}
+                <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                    Don&apos;t have an account?{" "}
+                    <Link href="/auth/signup" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+                        Create one
+                    </Link>
                 </p>
+
             </div>
         </div>
     );

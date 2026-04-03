@@ -15,66 +15,104 @@ export default function SignUp() {
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true); setError("");
+        setLoading(true);
+        setError("");
         const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, password }),
         });
         if (!res.ok) {
-            try { const d = await res.json(); setError(d.error ?? "Something went wrong"); }
+            try { const d = await res.json(); setError(d.error ?? "Something went wrong."); }
             catch { setError("Something went wrong. Please try again."); }
-            setLoading(false); return;
+            setLoading(false);
+            return;
         }
         router.push(`/auth/signin?registered=1&email=${encodeURIComponent(email)}`);
     };
 
     return (
-        <div className="bg-mesh min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
-            <div className="glass rounded-3xl p-8 w-full fade-up" style={{ maxWidth: 400 }}>
-                <div className="flex flex-col items-center gap-3 mb-8">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "var(--grad)" }}>
-                        <Footprints className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="text-center">
-                        <h1 className="text-2xl font-black" style={{ color: "var(--text)" }}>Create account</h1>
-                        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Start tracking your steps today</p>
-                    </div>
+        <div className="page auth-page">
+            <div className="auth-card fade-up">
+
+                {/* Logo */}
+                <div className="auth-logo">
+                    <Footprints style={{ width: 28, height: 28, color: "#fff" }} />
                 </div>
 
-                <form onSubmit={submit} className="flex flex-col gap-4">
-                    {[
-                        { label: "Name", type: "text", val: name, set: setName, ph: "Your name", icon: User, ac: "name" },
-                        { label: "Email", type: "email", val: email, set: setEmail, ph: "you@example.com", icon: Mail, ac: "email" },
-                        { label: "Password", type: "password", val: password, set: setPassword, ph: "Min 8 characters", icon: Lock, ac: "new-password" },
-                    ].map(({ label, type, val, set, ph, icon: Icon, ac }) => (
-                        <div key={label} className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>{label}</label>
-                            <div className="relative">
-                                <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--text-faint)" }} />
-                                <input type={type} value={val} onChange={e => set(e.target.value)}
-                                    placeholder={ph} autoComplete={ac}
-                                    required={label !== "Name"} minLength={label === "Password" ? 8 : undefined}
-                                    className="input" style={{ paddingLeft: "2.5rem" }} />
-                            </div>
+                {/* Heading */}
+                <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+                    <h1 style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--text)", marginBottom: 6 }}>
+                        Create your account
+                    </h1>
+                    <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                        Start tracking your steps today
+                    </p>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div className="field">
+                        <label className="label">
+                            <User style={{ width: 12, height: 12 }} /> Full name
+                        </label>
+                        <div className="input-wrap">
+                            <User className="input-icon" style={{ width: 16, height: 16 }} />
+                            <input
+                                type="text" value={name} onChange={e => setName(e.target.value)}
+                                placeholder="Your name" autoComplete="name"
+                                className="input has-icon"
+                            />
                         </div>
-                    ))}
+                    </div>
+
+                    <div className="field">
+                        <label className="label">
+                            <Mail style={{ width: 12, height: 12 }} /> Email address
+                        </label>
+                        <div className="input-wrap">
+                            <Mail className="input-icon" style={{ width: 16, height: 16 }} />
+                            <input
+                                type="email" value={email} onChange={e => setEmail(e.target.value)}
+                                placeholder="you@example.com" required autoComplete="email"
+                                className="input has-icon"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="field">
+                        <label className="label">
+                            <Lock style={{ width: 12, height: 12 }} /> Password
+                        </label>
+                        <div className="input-wrap">
+                            <Lock className="input-icon" style={{ width: 16, height: 16 }} />
+                            <input
+                                type="password" value={password} onChange={e => setPassword(e.target.value)}
+                                placeholder="Minimum 8 characters" required minLength={8} autoComplete="new-password"
+                                className="input has-icon"
+                            />
+                        </div>
+                    </div>
 
                     {error && (
-                        <p className="text-sm text-center py-2 px-3 rounded-xl" style={{ color: "var(--danger)", background: "rgba(239,68,68,0.1)" }}>
+                        <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "var(--r)", padding: "0.75rem 1rem", color: "var(--danger)", fontSize: "0.85rem", textAlign: "center" }}>
                             {error}
-                        </p>
+                        </div>
                     )}
 
-                    <button type="submit" disabled={loading} className="btn-primary mt-1">
-                        {loading ? <Loader2 className="w-4 h-4 spin" /> : "Create Account"}
+                    <button type="submit" disabled={loading} className="btn btn-primary" style={{ marginTop: 4 }}>
+                        {loading ? <Loader2 style={{ width: 18, height: 18 }} className="spin" /> : "Create Account"}
                     </button>
                 </form>
 
-                <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
+                {/* Footer */}
+                <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
                     Already have an account?{" "}
-                    <Link href="/auth/signin" className="font-semibold" style={{ color: "var(--accent)" }}>Sign in</Link>
+                    <Link href="/auth/signin" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+                        Sign in
+                    </Link>
                 </p>
+
             </div>
         </div>
     );

@@ -6,7 +6,13 @@ import { signOut } from "next-auth/react";
 import { ArrowLeft, User, Weight, Target, Footprints, LogOut, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-interface Profile { name: string; email: string; weight: number; strideLength: number; dailyGoal: number; }
+interface Profile {
+    name: string;
+    email: string;
+    weight: number;
+    strideLength: number;
+    dailyGoal: number;
+}
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -16,82 +22,108 @@ export default function ProfilePage() {
 
     useEffect(() => {
         fetch("/api/profile")
-            .then(r => { if (r.status === 401) router.push("/auth/signin"); return r.json(); })
-            .then(setProfile);
+            .then(r => { if (r.status === 401) { router.push("/auth/signin"); } return r.json(); })
+            .then(setProfile)
+            .catch(() => router.push("/auth/signin"));
     }, [router]);
 
     const save = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!profile) return;
         setSaving(true);
-        await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(profile) });
-        setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000);
+        await fetch("/api/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(profile),
+        });
+        setSaving(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
     };
 
     if (!profile) return (
-        <div className="bg-mesh min-h-screen flex items-center justify-center">
-            <Loader2 className="w-6 h-6 spin" style={{ color: "var(--accent)" }} />
+        <div className="page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh" }}>
+            <Loader2 className="spin" style={{ width: 32, height: 32, color: "var(--accent)" }} />
         </div>
     );
 
-    const fields = [
-        {
-            label: "Name", icon: User, type: "text", val: profile.name ?? "", hint: "",
-            onChange: (v: string) => setProfile({ ...profile, name: v })
-        },
-        {
-            label: "Weight (kg)", icon: Weight, type: "number", val: String(profile.weight), hint: "Used for calorie calculation",
-            onChange: (v: string) => setProfile({ ...profile, weight: parseFloat(v) })
-        },
-        {
-            label: "Stride Length (m)", icon: Footprints, type: "number", val: String(profile.strideLength), hint: "Average: 0.78m",
-            onChange: (v: string) => setProfile({ ...profile, strideLength: parseFloat(v) })
-        },
-        {
-            label: "Daily Goal (steps)", icon: Target, type: "number", val: String(profile.dailyGoal), hint: "",
-            onChange: (v: string) => setProfile({ ...profile, dailyGoal: parseInt(v) })
-        },
-    ];
-
     return (
-        <div className="bg-mesh min-h-screen safe-top safe-bottom flex flex-col items-center px-4 pb-8 gap-6 max-w-lg mx-auto w-full">
-            <div className="w-full pt-4 flex items-center justify-between">
-                <Link href="/" className="btn-ghost w-10 h-10" style={{ borderRadius: "var(--radius-sm)" }}>
-                    <ArrowLeft className="w-4 h-4" />
-                </Link>
-                <h1 className="text-lg font-black" style={{ color: "var(--text)" }}>Profile</h1>
-                <button onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                    className="btn-ghost w-10 h-10" style={{ borderRadius: "var(--radius-sm)", color: "var(--danger)" }}>
-                    <LogOut className="w-4 h-4" />
-                </button>
-            </div>
+        <div className="page">
+            <div className="container">
 
-            <div className="flex flex-col items-center gap-3 fade-up">
-                <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black text-white"
-                    style={{ background: "var(--grad)", boxShadow: "0 8px 32px rgba(139,92,246,0.4)" }}>
-                    {profile.name?.[0]?.toUpperCase() ?? "?"}
+                {/* Top bar */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "1.25rem" }}>
+                    <Link href="/" className="btn btn-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <ArrowLeft style={{ width: 16, height: 16 }} />
+                    </Link>
+                    <h1 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text)" }}>My Profile</h1>
+                    <button
+                        className="btn btn-danger"
+                        onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                        title="Sign out"
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                        <LogOut style={{ width: 15, height: 15 }} />
+                    </button>
                 </div>
-                <div className="text-center">
-                    <p className="font-bold text-lg" style={{ color: "var(--text)" }}>{profile.name || "Anonymous"}</p>
-                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>{profile.email}</p>
-                </div>
-            </div>
 
-            <form onSubmit={save} className="glass rounded-3xl p-6 w-full flex flex-col gap-5 fade-up" style={{ animationDelay: "0.1s" }}>
-                {fields.map(({ label, icon: Icon, type, val, hint, onChange }) => (
-                    <div key={label} className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "var(--text-faint)" }}>
-                            <Icon className="w-3.5 h-3.5" /> {label}
-                        </label>
-                        <input type={type} value={val} onChange={e => onChange(e.target.value)} className="input" />
-                        {hint && <p className="text-xs" style={{ color: "var(--text-faint)" }}>{hint}</p>}
+                {/* Avatar section */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginBottom: "1.5rem" }}>
+                    <div style={{
+                        width: 80, height: 80, borderRadius: "50%",
+                        background: "linear-gradient(135deg,#7c3aed,#ec4899)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "1.75rem", fontWeight: 900, color: "#fff",
+                        boxShadow: "0 4px 24px rgba(124,58,237,0.4)",
+                    }}>
+                        {profile.name?.[0]?.toUpperCase() ?? "?"}
                     </div>
-                ))}
+                    <div style={{ textAlign: "center" }}>
+                        <p style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--text)" }}>{profile.name || "Anonymous"}</p>
+                        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 2 }}>{profile.email}</p>
+                    </div>
+                </div>
 
-                <button type="submit" disabled={saving} className="btn-primary mt-1">
-                    {saving ? <Loader2 className="w-4 h-4 spin" /> : saved ? "✓ Saved" : <><Save className="w-4 h-4" /> Save Changes</>}
-                </button>
-            </form>
+                {/* Settings form */}
+                <form onSubmit={save} className="card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+                    <div className="field">
+                        <label className="label"><User style={{ width: 12, height: 12 }} /> Display name</label>
+                        <input type="text" value={profile.name ?? ""} onChange={e => setProfile({ ...profile, name: e.target.value })} className="input" placeholder="Your name" />
+                    </div>
+
+                    <div className="field">
+                        <label className="label"><Weight style={{ width: 12, height: 12 }} /> Body weight (kg)</label>
+                        <input type="number" min={30} max={300} step={0.1} value={profile.weight}
+                            onChange={e => setProfile({ ...profile, weight: parseFloat(e.target.value) })} className="input" />
+                        <p style={{ fontSize: "0.72rem", color: "var(--text-faint)" }}>Used for accurate calorie calculation</p>
+                    </div>
+
+                    <div className="field">
+                        <label className="label"><Footprints style={{ width: 12, height: 12 }} /> Stride length (m)</label>
+                        <input type="number" min={0.3} max={1.5} step={0.01} value={profile.strideLength}
+                            onChange={e => setProfile({ ...profile, strideLength: parseFloat(e.target.value) })} className="input" />
+                        <p style={{ fontSize: "0.72rem", color: "var(--text-faint)" }}>Average is 0.78m — adjust for your height</p>
+                    </div>
+
+                    <div className="field">
+                        <label className="label"><Target style={{ width: 12, height: 12 }} /> Daily step goal</label>
+                        <input type="number" min={1000} max={100000} step={500} value={profile.dailyGoal}
+                            onChange={e => setProfile({ ...profile, dailyGoal: parseInt(e.target.value) })} className="input" />
+                    </div>
+
+                    <button type="submit" disabled={saving} className="btn btn-primary" style={{ marginTop: 4 }}>
+                        {saving
+                            ? <Loader2 style={{ width: 18, height: 18 }} className="spin" />
+                            : saved
+                                ? <><Save style={{ width: 16, height: 16 }} /> Saved!</>
+                                : <><Save style={{ width: 16, height: 16 }} /> Save Changes</>
+                        }
+                    </button>
+
+                </form>
+
+            </div>
         </div>
     );
 }

@@ -12,29 +12,14 @@ export default async function Home() {
   return (
     <>
       <OfflineBanner />
-      <div className="bg-mesh" style={{ minHeight: "100dvh" }}>
-        <div style={{
-          maxWidth: 480,
-          margin: "0 auto",
-          padding: "0 1rem 3rem",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "1.5rem",
-        }}>
-          <div style={{ width: "100%", paddingTop: "1.25rem" }}>
-            <Navbar />
-          </div>
-
-          <div className="fade-up" style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-faint)", marginBottom: 4 }}>
+      <div className="page">
+        <div className="container">
+          <Navbar />
+          <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+            <p style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-faint)" }}>
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </p>
-            <h1 className="grad-text" style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.02em" }}>
-              StepTracker
-            </h1>
           </div>
-
           <StepCounter />
           <StepHistory />
         </div>

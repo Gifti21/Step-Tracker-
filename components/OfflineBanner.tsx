@@ -14,9 +14,11 @@ export default function OfflineBanner() {
         return () => { window.removeEventListener("offline", on); window.removeEventListener("online", off); };
     }, []);
 
+    if (!offline) return null;
+
     return (
-        <div className={`offline-banner ${offline ? "show" : ""}`}>
-            <WifiOff className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+        <div className="offline-banner">
+            <WifiOff style={{ display: "inline", width: 14, height: 14, marginRight: 6, verticalAlign: "middle" }} />
             You&apos;re offline — steps will sync when reconnected
         </div>
     );

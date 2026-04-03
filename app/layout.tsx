@@ -5,9 +5,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "StepTracker",
-  description: "Track your daily steps and movement",
+  description: "Track your daily steps",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "StepTracker" },
 };
 
 export const viewport: Viewport = {
@@ -15,10 +14,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0f" },
-    { media: "(prefers-color-scheme: light)", color: "#f0eeff" },
-  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
